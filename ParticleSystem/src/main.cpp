@@ -143,7 +143,7 @@ private:
 	glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
 	glm::vec2 m_ViewportBounds[2];
 
-	//Camera m_Camera;
+	Camera m_Camera;
 	OrthographicCamera m_OrthographicCamera;
 
     Framebuffer m_Framebuffer;
