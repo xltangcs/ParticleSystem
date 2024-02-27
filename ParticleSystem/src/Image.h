@@ -7,6 +7,7 @@
 class Image
 {
 public:
+	Image() {};
 	Image(uint32_t width, uint32_t height);
 	Image(const std::string& path);
 	~Image();
@@ -19,6 +20,6 @@ public:
 
 private:
 	uint32_t m_Width = 0, m_Height = 0;
-	uint32_t m_TextureID;
-	GLenum m_DataFormat;
+	uint32_t m_TextureID = 0;
+	GLenum m_DataFormat = 0;
 };

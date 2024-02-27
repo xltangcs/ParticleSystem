@@ -10,6 +10,42 @@
 
 ParticleSystem::ParticleSystem()
 {
+	float vertices[] = {
+	 -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+	  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+	  0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+	 -0.5f,  0.5f, 0.0f, 0.0f, 1.0f
+	};
+
+	uint32_t indices[] = {
+		0, 1, 2, 2, 3, 0
+	};
+
+	glGenVertexArrays(1, &m_QuadVA);
+	glBindVertexArray(m_QuadVA);
+
+	GLuint quadVB, quadIB;
+	glGenBuffers(1, &quadVB);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVB);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &quadIB);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIB);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	m_ParticleShader = std::make_unique<Shader>("assets/shaders/2DQuad.vert", "assets/shaders/2DQuad.frag");
+	snowImage = std::make_unique<Image>("assets/textures/snow.png");
+
+	m_ParticleShader->use();
+	m_ParticleShader->setInt("texture1", 0);
+
 	m_ParticlePool.resize(1000);
 }
 
@@ -34,44 +70,14 @@ void ParticleSystem::OnUpdate(float ts)
 
 void ParticleSystem::OnRender(OrthographicCamera& camera)
 {
-	if (!m_QuadVA)
-	{
-		float vertices[] = {
-			 -0.5f, -0.5f, 0.0f,
-			  0.5f, -0.5f, 0.0f,
-			  0.5f,  0.5f, 0.0f,
-			 -0.5f,  0.5f, 0.0f
-		};
-
-		uint32_t indices[] = {
-			0, 1, 2, 2, 3, 0
-		};
-
-		glGenVertexArrays(1, &m_QuadVA);
-		glBindVertexArray(m_QuadVA);
-
-		GLuint quadVB, quadIB;
-		glGenBuffers(1, &quadVB);
-		glBindBuffer(GL_ARRAY_BUFFER, quadVB);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-		glGenBuffers(1, &quadIB);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIB);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-
-		m_ParticleShader = std::make_unique<Shader>("assets/shaders/2DQuad.vert", "assets/shaders/2DQuad.frag");
-	}
-
 	glClearColor(0, 0, 0, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// activate shader
 	m_ParticleShader->use();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, snowImage->GetTextureID());
 
 	glm::mat4 projection = camera.GetProjection();
 	m_ParticleShader->setMat4("u_Projection", projection);
@@ -98,6 +104,8 @@ void ParticleSystem::OnRender(OrthographicCamera& camera)
 
 		m_ParticleShader->setMat4("u_Model", transform);
 		m_ParticleShader->setVec4("u_Color", color);
+
+
 
 		glBindVertexArray(m_QuadVA);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);

@@ -11,6 +11,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "OrthographicCamera.h"
+#include "Image.h"
 
 
 struct ParticleProps
@@ -51,4 +52,6 @@ private:
 
 	GLuint m_QuadVA = 0;
 	std::unique_ptr<Shader> m_ParticleShader = nullptr;
+
+	std::unique_ptr<Image> snowImage = nullptr;
 };
