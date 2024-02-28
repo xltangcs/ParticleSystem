@@ -12,6 +12,7 @@ project "ParticleSystem"
 
    includedirs
    {
+      "src",
       "../vendor/imgui",
       "../vendor/glfw/include",
       "../vendor/glad/include",

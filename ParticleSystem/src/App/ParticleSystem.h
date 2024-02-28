@@ -8,10 +8,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Shader.h"
-#include "Camera.h"
-#include "OrthographicCamera.h"
-#include "Image.h"
+#include "Core/Shader.h"
+#include "Core/Camera.h"
+#include "Core/Image.h"
 
 
 struct ParticleProps
@@ -29,7 +28,7 @@ public:
 	ParticleSystem();
 
 	void OnUpdate(float ts);
-	void OnRender(OrthographicCamera& camera);
+	void OnRender(Camera& camera);
 
 	void Emit(const ParticleProps& particleProps);
 private:

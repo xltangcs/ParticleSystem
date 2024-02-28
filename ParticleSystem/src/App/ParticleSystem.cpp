@@ -5,7 +5,7 @@
 #include <glm/gtx/compatibility.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Random.h"
+#include "Core/Random.h"
 
 
 ParticleSystem::ParticleSystem()
@@ -46,7 +46,7 @@ ParticleSystem::ParticleSystem()
 	m_ParticleShader->use();
 	m_ParticleShader->setInt("texture1", 0);
 
-	m_ParticlePool.resize(1000);
+	m_ParticlePool.resize(10000);
 }
 
 void ParticleSystem::OnUpdate(float ts)
@@ -68,7 +68,7 @@ void ParticleSystem::OnUpdate(float ts)
 	}
 }
 
-void ParticleSystem::OnRender(OrthographicCamera& camera)
+void ParticleSystem::OnRender(Camera& camera)
 {
 	glClearColor(0, 0, 0, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);

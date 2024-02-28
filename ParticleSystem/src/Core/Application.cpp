@@ -124,7 +124,7 @@ void Application::Run()
     static bool dockspace = true;
     // Our state
     bool show_demo_window = true;
-    ImVec4 clear_color = ImVec4(0.8f, 0.1f, 0.1f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     ImGuiIO& io = ImGui::GetIO();
 
     while (!glfwWindowShouldClose(m_GLFWwindow) && m_Running)
@@ -143,6 +143,7 @@ void Application::Run()
             imguilayer->OnUpdate(m_TimeStep);
         }
 
+
         float time = (float)glfwGetTime();
         m_FrameTime = time - m_LastFrameTime;
         m_TimeStep = glm::min<float>(m_FrameTime, 0.0333f);
@@ -150,35 +151,44 @@ void Application::Run()
 
         /********************** update end *********************/
 
+        //glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        //glClear(GL_COLOR_BUFFER_BIT);
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        //ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-        ShowExampleAppDockSpace(&dockspace);
+        
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        //ShowExampleAppDockSpace(&dockspace);
 
         for (auto& imguilayer : m_ImGuiLayerVector)
         {
             imguilayer->ShowUI(m_TimeStep);
+            imguilayer->Render(m_TimeStep);
         }
 
+ /*     for (auto& imguilayer : m_ImGuiLayerVector)
+        {
+            imguilayer->Render(m_TimeStep);
+        }*/
 
-        //ImGui::ShowDemoWindow(&show_demo_window);
-
+        //int display_w, display_h;
+        //glfwGetFramebufferSize(m_GLFWwindow, &display_w, &display_h);
+        //glViewport(0, 0, display_w, display_h);
         
-    /*    ImGui::Begin("test");
-        ImGui::Button("button");
-        ImGui::End();*/
+        //ImGui::ShowDemoWindow(&show_demo_window);
 
 
         // Rendering
         ImGui::Render();
+
         //int display_w, display_h;
         //glfwGetFramebufferSize(m_GLFWwindow, &display_w, &display_h);
-        ////glViewport(0, 0, display_w, display_h);
+        //glViewport(0, 0, display_w, display_h);
         //glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         //glClear(GL_COLOR_BUFFER_BIT);
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // Update and Render additional Platform Windows
@@ -245,7 +255,7 @@ void Application::Init()
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
