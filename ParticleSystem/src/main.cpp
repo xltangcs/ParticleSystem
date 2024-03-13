@@ -62,12 +62,15 @@ public:
 		ImGui::End();
 
 		ImGui::Begin("Settings");
+		ImGui::Text("The average fps: %.3f", ImGui::GetIO().Framerate);
+		ImGui::Text("Number of particles : %d", m_ParticleSystem.ParticleQuantity());
+		ImGui::Separator();
 
-		ImGui::ColorEdit4("Birth Color", glm::value_ptr(m_Particle.ColorBegin));
-		ImGui::ColorEdit4("Death Color", glm::value_ptr(m_Particle.ColorEnd));
 		ImGui::DragFloat("Birth Size", &m_Particle.SizeBegin, 0.01f, 0.00f, 1000.00f);
 		ImGui::DragFloat("Death Size", &m_Particle.SizeEnd, 0.01f, 0.00f, 1000.00f);
 		ImGui::DragFloat("Life Time", &m_Particle.LifeTime, 0.01f, 0.00f, 1000.00f);
+		ImGui::DragInt("Emit Quantity", &particleQuantity);
+
 
 		ImGui::End();
 
@@ -107,7 +110,7 @@ public:
 				glm::vec3 mouseWorld = m_Camera.GetProjection() * m_Camera.GetInverseView() * mouseNdc;
 				m_Particle.Position = { mouseWorld.x, mouseWorld.y };
 
-				for (int i = 0; i < 5; i++)
+				for (int i = 0; i < particleQuantity; i++)
 					m_ParticleSystem.Emit(m_Particle);
 			}
 
@@ -119,6 +122,7 @@ public:
 	}
 
 private:
+	int particleQuantity = 5;
 	glm::vec2 m_ViewportSize = { 10.0f, 10.0f };
 	glm::vec2 m_ViewportBounds[2];
 

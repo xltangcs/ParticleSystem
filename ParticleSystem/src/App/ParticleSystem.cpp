@@ -46,15 +46,19 @@ ParticleSystem::ParticleSystem()
 	m_ParticleShader->use();
 	m_ParticleShader->setInt("texture1", 0);
 
-	m_ParticlePool.resize(10000);
+	m_ParticlePool.resize(maxQuantity);
 }
 
 void ParticleSystem::OnUpdate(float ts)
 {
+	std::vector<glm::mat4> modelMatrices;
+
 	for (auto& particle : m_ParticlePool)
 	{
 		if (!particle.Active)
+		{
 			continue;
+		}
 
 		if (particle.LifeRemaining <= 0.0f)
 		{
@@ -65,7 +69,44 @@ void ParticleSystem::OnUpdate(float ts)
 		particle.LifeRemaining -= ts;
 		particle.Position += particle.Velocity * (float)ts;
 		particle.Rotation += 0.01f * ts;
+
+		float life = particle.LifeRemaining / particle.LifeTime;
+		float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
+
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), { particle.Position.x, particle.Position.y, 0.0f })
+			* glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f })
+			* glm::scale(glm::mat4(1.0f), { size, size, 1.0f });
+
+		modelMatrices.push_back(transform);
+
 	}
+
+	lifeParticle = modelMatrices.size();
+
+	glBindVertexArray(m_QuadVA);
+	unsigned int buffer;
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	glBufferData(GL_ARRAY_BUFFER, lifeParticle * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+
+	
+	// set attribute pointers for matrix (4 times vec4)
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+	glVertexAttribDivisor(2, 1);
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+	glVertexAttribDivisor(5, 1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glDeleteBuffers(1, &buffer);
 }
 
 void ParticleSystem::OnRender(Camera& camera)
@@ -85,36 +126,42 @@ void ParticleSystem::OnRender(Camera& camera)
 	glm::mat4 view = camera.GetView();
 	m_ParticleShader->setMat4("u_View", view);
 
-	for (auto& particle : m_ParticlePool)
-	{
-		if (!particle.Active)
-			continue;
-
-		// Fade away particles
-		float life = particle.LifeRemaining / particle.LifeTime;
-		glm::vec4 color = glm::lerp(particle.ColorEnd, particle.ColorBegin, life);
-		//color.a = color.a * life;
-
-		float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
-
-		// Render
-		glm::mat4 transform = glm::translate(glm::mat4(1.0f), { particle.Position.x, particle.Position.y, 0.0f })
-			* glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f })
-			* glm::scale(glm::mat4(1.0f), { size, size, 1.0f });
-
-		m_ParticleShader->setMat4("u_Model", transform);
-		m_ParticleShader->setVec4("u_Color", color);
+	glBindVertexArray(m_QuadVA);
+	glDrawElementsInstanced(GL_TRIANGLES, 6 * sizeof(uint32_t), GL_UNSIGNED_INT, 0, lifeParticle);
+	glBindVertexArray(0);
 
 
-
-		glBindVertexArray(m_QuadVA);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-	}
+	//for (auto& particle : m_ParticlePool)
+	//{
+	//	if (!particle.Active)
+	//		continue;
+	//	// Fade away particles
+	//	float life = particle.LifeRemaining / particle.LifeTime;
+	//	glm::vec4 color = glm::lerp(particle.ColorEnd, particle.ColorBegin, life);
+	//	//color.a = color.a * life;
+	//
+	//	float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
+	//
+	//	// Render
+	//	glm::mat4 transform = glm::translate(glm::mat4(1.0f), { particle.Position.x, particle.Position.y, 0.0f })
+	//		* glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f })
+	//		* glm::scale(glm::mat4(1.0f), { size, size, 1.0f });
+	//
+	//	m_ParticleShader->setMat4("u_Model", transform);
+	//	m_ParticleShader->setVec4("u_Color", color);
+	//
+	//
+	//
+	//	glBindVertexArray(m_QuadVA);
+	//
+	//	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+	//}
 }
 
 void ParticleSystem::Emit(const ParticleProps& particleProps)
 {
-	Particle& particle = m_ParticlePool[m_PoolIndex];
+	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
+
 	particle.Active = true;
 	particle.Position = particleProps.Position;
 	particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
@@ -133,6 +180,8 @@ void ParticleSystem::Emit(const ParticleProps& particleProps)
 	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
 	particle.SizeEnd = particleProps.SizeEnd;
 
-	m_PoolIndex = --m_PoolIndex % m_ParticlePool.size();
-	m_PoolIndex = --m_PoolIndex % m_ParticlePool.size();
+
+
+	//m_PoolIndex = --m_PoolIndex % m_ParticlePool.size();
+	//m_PoolIndex = --m_PoolIndex % m_ParticlePool.size();
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <list>
 #include <memory>
 
 #include <glad/glad.h>
@@ -31,6 +31,9 @@ public:
 	void OnRender(Camera& camera);
 
 	void Emit(const ParticleProps& particleProps);
+
+	int ParticleQuantity() { return lifeParticle; }
+
 private:
 	struct Particle
 	{
@@ -45,9 +48,12 @@ private:
 
 		bool Active = false;
 	};
+	const int maxQuantity = 20000;
+
+	int lifeParticle = 0;
+	int m_PoolIndex = 0;
 
 	std::vector<Particle> m_ParticlePool;
-	uint32_t m_PoolIndex = 999;
 
 	GLuint m_QuadVA = 0;
 	std::unique_ptr<Shader> m_ParticleShader = nullptr;
