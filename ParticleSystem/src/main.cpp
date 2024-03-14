@@ -10,6 +10,7 @@
 
 #include "Core/Camera.h"
 #include "Core/Application.h"
+#include "Core/Time.h"
 
 #include "App/Framebuffer.h"
 #include "App/ParticleSystem.h"
@@ -63,7 +64,11 @@ public:
 
 		ImGui::Begin("Settings");
 		ImGui::Text("The average fps: %.3f", ImGui::GetIO().Framerate);
+		ImGui::Text("Update Time : %.3f", t1);
+		ImGui::Text("Render Time : %.3f", t2);
 		ImGui::Text("Number of particles : %d", m_ParticleSystem.ParticleQuantity());
+
+
 		ImGui::Separator();
 
 		ImGui::DragFloat("Birth Size", &m_Particle.SizeBegin, 0.01f, 0.00f, 1000.00f);
@@ -115,10 +120,12 @@ public:
 			}
 
 		}
-
+		m_Time.Reset();
 		m_ParticleSystem.OnUpdate(ts);
+		t1 = m_Time.ElapsedMillis();
+		m_Time.Reset();
 		m_ParticleSystem.OnRender(m_Camera);
-
+		t2 = m_Time.ElapsedMillis();
 	}
 
 private:
@@ -132,6 +139,10 @@ private:
 
 	ParticleProps m_Particle;
 	ParticleSystem m_ParticleSystem;
+
+
+	Timer m_Time;
+	float t1, t2;
 };
 
 

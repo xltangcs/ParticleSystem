@@ -56,6 +56,7 @@ private:
 	std::vector<Particle> m_ParticlePool;
 
 	GLuint m_QuadVA = 0;
+	unsigned int buffer;
 	std::unique_ptr<Shader> m_ParticleShader = nullptr;
 
 	std::unique_ptr<Image> snowImage = nullptr;
