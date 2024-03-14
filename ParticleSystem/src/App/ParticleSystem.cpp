@@ -136,32 +136,6 @@ void ParticleSystem::OnRender(Camera& camera)
 	glDrawElementsInstanced(GL_TRIANGLES, 6 * sizeof(uint32_t), GL_UNSIGNED_INT, 0, lifeParticle);
 	glBindVertexArray(0);
 
-
-	//for (auto& particle : m_ParticlePool)
-	//{
-	//	if (!particle.Active)
-	//		continue;
-	//	// Fade away particles
-	//	float life = particle.LifeRemaining / particle.LifeTime;
-	//	glm::vec4 color = glm::lerp(particle.ColorEnd, particle.ColorBegin, life);
-	//	//color.a = color.a * life;
-	//
-	//	float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
-	//
-	//	// Render
-	//	glm::mat4 transform = glm::translate(glm::mat4(1.0f), { particle.Position.x, particle.Position.y, 0.0f })
-	//		* glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f })
-	//		* glm::scale(glm::mat4(1.0f), { size, size, 1.0f });
-	//
-	//	m_ParticleShader->setMat4("u_Model", transform);
-	//	m_ParticleShader->setVec4("u_Color", color);
-	//
-	//
-	//
-	//	glBindVertexArray(m_QuadVA);
-	//
-	//	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-	//}
 }
 
 void ParticleSystem::Emit(const ParticleProps& particleProps)

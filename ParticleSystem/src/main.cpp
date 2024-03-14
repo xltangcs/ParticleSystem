@@ -15,14 +15,16 @@
 #include "App/Framebuffer.h"
 #include "App/ParticleSystem.h"
 
+Timer m_Time;
+Timer m_Time1;
+float t0, t1, t2, t3;
+
 class MyImGuiLayer : public ImGuiLayer
 {
 public:
 	MyImGuiLayer()
 		: m_Framebuffer(100, 80), m_Camera(45.0f, 0.1f, 100.0f)
 	{
-		//glEnable(GL_BLEND);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// Init here
 		m_Particle.ColorBegin = { 254 / 255.0f, 212 / 255.0f, 123 / 255.0f, 1.0f };
@@ -36,36 +38,25 @@ public:
 
 	virtual void OnUpdate(float ts) override
 	{
-		glViewport(0, 0, (GLsizei)m_ViewportSize.x, (GLsizei)m_ViewportSize.y);
-
 		m_Camera.OnUpdate(ts);
-		m_Camera.OnResize(m_ViewportSize.x, m_ViewportSize.y);
-
-		m_Framebuffer.Resize(m_ViewportSize.x, m_ViewportSize.y);
 	}
 
 	virtual void ShowUI(float ts) override
 	{
+		int width, height;
+		auto window = Application::Get().GetGLFWwindow();
+		glfwGetFramebufferSize(window, &width, &height);
+		m_Width = width; m_Height = height;
 
-		ImGui::Begin("Viewport");
-
-		auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-		auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-		auto viewportOffset = ImGui::GetWindowPos();
-		m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-		m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-
-		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
-
-		ImGui::Image((ImTextureID)m_Framebuffer.GetTextureID(), viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-
-		ImGui::End();
 
 		ImGui::Begin("Settings");
 		ImGui::Text("The average fps: %.3f", ImGui::GetIO().Framerate);
+		ImGui::Text("Total Time : %.3f", 1000.0f / ImGui::GetIO().Framerate);
 		ImGui::Text("Update Time : %.3f", t1);
 		ImGui::Text("Render Time : %.3f", t2);
+
+		ImGui::Text("t3 Time : %.3f", t3);
+		ImGui::Text("t0 Time : %.3f", t0);
 		ImGui::Text("Number of particles : %d", m_ParticleSystem.ParticleQuantity());
 
 
@@ -76,50 +67,42 @@ public:
 		ImGui::DragFloat("Life Time", &m_Particle.LifeTime, 0.01f, 0.00f, 1000.00f);
 		ImGui::DragInt("Emit Quantity", &particleQuantity);
 
-
 		ImGui::End();
-
-		m_Framebuffer.Bind();//Render here
-
-		ParticleSystem2D(ts);
-
-		m_Framebuffer.Unbind();
 
 	}
 
-	void ParticleSystem2D(float ts)
+	virtual void Render(float ts) override
 	{
+		glViewport(0, 0, m_Width, m_Height);
+		m_Camera.OnResize(m_Width, m_Height);
+
 		GLFWwindow* window = Application::Get().GetGLFWwindow();
 
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
 		glm::vec2 mousePos((float)xpos, (float)ypos);
 
-
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-		{
+		//if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		//{
 			auto [mx, my] = ImGui::GetMousePos();
-
-			mx -= m_ViewportBounds[0].x;
-			my -= m_ViewportBounds[0].y;
-			glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
 			//my = viewportSize.y - my;
 			int mouseX = (int)mx;
 			int mouseY = (int)my;
 
-			if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
+			if (mouseX >= 0 && mouseY >= 0 && mouseX < m_Width && mouseY < m_Height)
 			{
-				float ndcX = (2.0f * mousePos.x) / m_ViewportSize.x - 1.0f;
-				float ndcY = 1.0f - (2.0f * mousePos.y) / m_ViewportSize.y;
+				float ndcX = (2.0f * mousePos.x) / m_Width - 1.0f;
+				float ndcY = 1.0f - (2.0f * mousePos.y) / m_Height;
 				glm::vec4 mouseNdc = glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
 				glm::vec3 mouseWorld = m_Camera.GetProjection() * m_Camera.GetInverseView() * mouseNdc;
+
 				m_Particle.Position = { mouseWorld.x, mouseWorld.y };
 
 				for (int i = 0; i < particleQuantity; i++)
 					m_ParticleSystem.Emit(m_Particle);
 			}
-
-		}
+	
+		//}
 		m_Time.Reset();
 		m_ParticleSystem.OnUpdate(ts);
 		t1 = m_Time.ElapsedMillis();
@@ -129,9 +112,8 @@ public:
 	}
 
 private:
-	int particleQuantity = 5;
-	glm::vec2 m_ViewportSize = { 10.0f, 10.0f };
-	glm::vec2 m_ViewportBounds[2];
+	int particleQuantity = 10000;
+	int m_Width = 10, m_Height = 10;
 
 	Camera m_Camera;
 
@@ -141,8 +123,7 @@ private:
 	ParticleSystem m_ParticleSystem;
 
 
-	Timer m_Time;
-	float t1, t2;
+	
 };
 
 

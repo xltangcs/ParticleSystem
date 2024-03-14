@@ -10,6 +10,11 @@
 #endif
 
 
+#include "Core/Time.h"
+Timer m_time2;
+extern float t0;
+
+
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
 // Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
@@ -138,6 +143,7 @@ void Application::Run()
         glfwPollEvents();
 
         /********************** update *************************/
+        
         for (auto& imguilayer : m_ImGuiLayerVector)
         {
             imguilayer->OnUpdate(m_TimeStep);
@@ -149,6 +155,8 @@ void Application::Run()
         m_TimeStep = glm::min<float>(m_FrameTime, 0.0333f);
         m_LastFrameTime = time;
 
+    
+
         /********************** update end *********************/
 
         //glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
@@ -159,15 +167,18 @@ void Application::Run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         
-        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        //ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         //ShowExampleAppDockSpace(&dockspace);
 
         for (auto& imguilayer : m_ImGuiLayerVector)
         {
+           
             imguilayer->ShowUI(m_TimeStep);
             imguilayer->Render(m_TimeStep);
+           
         }
 
+       
  /*     for (auto& imguilayer : m_ImGuiLayerVector)
         {
             imguilayer->Render(m_TimeStep);
@@ -188,7 +199,7 @@ void Application::Run()
         //glViewport(0, 0, display_w, display_h);
         //glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         //glClear(GL_COLOR_BUFFER_BIT);
-
+        m_time2.Reset();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // Update and Render additional Platform Windows
@@ -203,6 +214,8 @@ void Application::Run()
         }
 
         glfwSwapBuffers(m_GLFWwindow);
+        t0 = m_time2.ElapsedMillis();
+        
     }
     #ifdef __EMSCRIPTEN__
         EMSCRIPTEN_MAINLOOP_END;

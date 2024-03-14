@@ -48,7 +48,7 @@ private:
 
 		bool Active = false;
 	};
-	const int maxQuantity = 20000;
+	const int maxQuantity = 10000;
 
 	int lifeParticle = 0;
 	int m_PoolIndex = 0;
