@@ -151,17 +151,9 @@ void ParticleSystem::Emit(const ParticleProps& particleProps)
 	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float() - 0.5f);
 	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float() - 0.5f);
 
-	// Color
-	particle.ColorBegin = particleProps.ColorBegin;
-	particle.ColorEnd = particleProps.ColorEnd;
-
 	particle.LifeTime = particleProps.LifeTime;
 	particle.LifeRemaining = particleProps.LifeTime;
 	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
 	particle.SizeEnd = particleProps.SizeEnd;
 
-
-
-	//m_PoolIndex = --m_PoolIndex % m_ParticlePool.size();
-	//m_PoolIndex = --m_PoolIndex % m_ParticlePool.size();
 }

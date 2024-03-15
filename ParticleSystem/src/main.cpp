@@ -17,7 +17,7 @@
 
 Timer m_Time;
 Timer m_Time1;
-float t0, t1, t2, t3;
+float t1, t2;
 
 class MyImGuiLayer : public ImGuiLayer
 {
@@ -54,9 +54,6 @@ public:
 		ImGui::Text("Total Time : %.3f", 1000.0f / ImGui::GetIO().Framerate);
 		ImGui::Text("Update Time : %.3f", t1);
 		ImGui::Text("Render Time : %.3f", t2);
-
-		ImGui::Text("t3 Time : %.3f", t3);
-		ImGui::Text("t0 Time : %.3f", t0);
 		ImGui::Text("Number of particles : %d", m_ParticleSystem.ParticleQuantity());
 
 
@@ -73,26 +70,21 @@ public:
 
 	virtual void Render(float ts) override
 	{
-		glViewport(0, 0, m_Width, m_Height);
+
 		m_Camera.OnResize(m_Width, m_Height);
 
 		GLFWwindow* window = Application::Get().GetGLFWwindow();
 
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
-		glm::vec2 mousePos((float)xpos, (float)ypos);
 
-		//if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-		//{
-			auto [mx, my] = ImGui::GetMousePos();
-			//my = viewportSize.y - my;
-			int mouseX = (int)mx;
-			int mouseY = (int)my;
-
-			if (mouseX >= 0 && mouseY >= 0 && mouseX < m_Width && mouseY < m_Height)
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		{
+			
+			if (xpos >= 0 && ypos >= 0 && xpos < m_Width && ypos < m_Height)
 			{
-				float ndcX = (2.0f * mousePos.x) / m_Width - 1.0f;
-				float ndcY = 1.0f - (2.0f * mousePos.y) / m_Height;
+				float ndcX = (2.0f * xpos) / m_Width - 1.0f;
+				float ndcY = 1.0f - (2.0f * ypos) / m_Height;
 				glm::vec4 mouseNdc = glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
 				glm::vec3 mouseWorld = m_Camera.GetProjection() * m_Camera.GetInverseView() * mouseNdc;
 
@@ -101,8 +93,9 @@ public:
 				for (int i = 0; i < particleQuantity; i++)
 					m_ParticleSystem.Emit(m_Particle);
 			}
-	
-		//}
+		}
+
+
 		m_Time.Reset();
 		m_ParticleSystem.OnUpdate(ts);
 		t1 = m_Time.ElapsedMillis();
@@ -121,9 +114,6 @@ private:
 
 	ParticleProps m_Particle;
 	ParticleSystem m_ParticleSystem;
-
-
-	
 };
 
 
