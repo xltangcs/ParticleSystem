@@ -13,6 +13,10 @@ DrawInstance::DrawInstance()
 	m_ParticleShader(std::make_unique<Shader>("assets/shaders/DrawInstance.vert", "assets/shaders/2DQuad.frag")),
 	snowImage(std::make_unique<Image>("assets/textures/snow.png"))
 {
+	m_ParticleShader->use();
+	m_ParticleShader->setInt("snowTexture", 0);
+	m_ParticlePool.resize(maxQuantity);
+
 	float vertices[] = {
 	 -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
 	  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
@@ -32,15 +36,17 @@ DrawInstance::DrawInstance()
 	glBindBuffer(GL_ARRAY_BUFFER, quadVB);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glGenBuffers(1, &quadIB);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIB);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &quadIB);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIB);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	
 	glBindVertexArray(0);
 
 
@@ -66,12 +72,6 @@ DrawInstance::DrawInstance()
 	glVertexAttribDivisor(3, 1);
 	glVertexAttribDivisor(4, 1);
 	glVertexAttribDivisor(5, 1);
-
-
-	m_ParticleShader->use();
-	m_ParticleShader->setInt("snowTexture", 0);
-
-	m_ParticlePool.resize(maxQuantity);
 }
 
 void DrawInstance::OnUpdate(float ts)
@@ -152,11 +152,11 @@ void DrawInstance::Emit(const ParticleProps& particleProps)
 	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
 
 	particle.Active = true;
-	particle.Position = particleProps.Position;
+	particle.Position = glm::vec4(particleProps.Position, 1.0f);
 	particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
 
 	// Velocity
-	particle.Velocity = particleProps.Velocity;
+	particle.Velocity = glm::vec4(particleProps.Velocity, 0.0f);
 	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float());
 	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float());
 	particle.Velocity.z += particleProps.VelocityVariation.z * (Random::Float());
@@ -164,5 +164,6 @@ void DrawInstance::Emit(const ParticleProps& particleProps)
 	particle.LifeTime = particleProps.LifeTime;
 	particle.LifeRemaining = particleProps.LifeTime;
 	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
+	particle.SizeBegin = particleProps.SizeBegin;
 	particle.SizeEnd = particleProps.SizeEnd;
 }

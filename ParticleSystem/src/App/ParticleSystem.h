@@ -23,14 +23,15 @@ struct ParticleProps
 
 struct Particle
 {
-	glm::vec3 Position;
-	glm::vec3 Velocity;
-	float Rotation = 0.0f;
-	float SizeBegin, SizeEnd;
+	glm::vec4 Position;
+	glm::vec4 Velocity;
 
-	float LifeTime = 1.0f;
+	float Rotation = 0.0f;
 	float LifeRemaining = 0.0f;
 
+	float SizeBegin;
+	float SizeEnd;
+	float LifeTime = 1.0f;
 	bool Active = false;
 };
 

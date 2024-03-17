@@ -2,6 +2,22 @@
 
 #include "App/ParticleSystem.h"
 
+struct ParticleGPU
+{
+	glm::vec4 Position;
+	glm::vec4 Velocity;
+	float Rotation = 0.0f;
+	float LifeRemaining = 1.0f;
+
+	float SizeBegin;
+	bool Active = true;
+};
+
+struct VertexGPU {
+	glm::vec4 position;
+	glm::vec4 texcoord;
+};
+
 class ComputeShader : public ParticleSystem
 {
 public:
@@ -16,11 +32,9 @@ private:
 	std::unique_ptr<Shader> m_ParticleShader = nullptr;
 	std::unique_ptr<Image> snowImage = nullptr;
 
+	std::vector<Particle> m_ParticlePool;
 	int m_PoolIndex = 0;
 
-	std::vector<Particle> m_ParticlePool;
-
 	GLuint m_VAO = 0;
-
-	GLuint vertBuffer;
+	GLuint IBO, vertexBuffer, particleBuffer, modelBuffer;
 };

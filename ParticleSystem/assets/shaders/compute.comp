@@ -1,27 +1,35 @@
 #version 430 core
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-struct Particle
+struct ParticleGPU
 {
-	vec3 Position;
-	vec3 Velocity;
-	float Rotation;
-	float SizeBegin, SizeEnd;
+	vec4 Position;
+	vec4 Velocity;
 
-	float LifeTime;
+	float Rotation;
 	float LifeRemaining;
 
+	float SizeBegin;
 	bool Active;
+};
+
+struct VertexGPU {
+	vec4 position;
+	vec4 texcoord;
 };
 
 layout(binding = 0) buffer inputBuffer
 {
-	Particle datas[];
+	ParticleGPU datas[];
 };
 
 layout(binding = 1) buffer OutputBuffer {
-    mat4 model;
+    VertexGPU vertexs[];
 };
+
+uniform float ts;
+uniform float LifeTime;
+
 
 mat4 caltranslate(mat4 m, vec3 v)
 {
@@ -61,29 +69,19 @@ mat4 calscale(mat4 m, vec3 v)
 	return Result;
 }
 
-
-uniform float ts;
-
-
 void main()
 {
-	uint index = gl_GlobalInvocationID.x;
-	Particle p = datas[index];
-
-	p.LifeRemaining -= ts;
-	p.Position +=p.Velocity * ts;
-	p.Rotation += 0.01f * ts;
-
-	float life = p.LifeRemaining / p.LifeTime;
-	float size = p.SizeBegin - (p.SizeBegin - p.SizeEnd) *(1.0f - life);
+	uint index = gl_WorkGroupID.x;
 	
-
-	mat4 transform = mat4(1.0f);
-
-	transform = caltranslate(transform, vec3(p.Position.x, p.Position.y, p.Position.z))
-		* calrotate(transform, p.Rotation, vec3(0.0f, 0.0f, 1.0f))
-		* calscale(transform, vec3(size, size, 1.0f ));
+	vertexs[index * 4 + 0].position = datas[index].Position + vec4(-0.5, -0.5, 0.0, 1.0);
+	vertexs[index * 4 + 1].position = datas[index].Position + vec4( 0.5, -0.5, 0.0, 1.0);
+	vertexs[index * 4 + 2].position = datas[index].Position + vec4( 0.5,  0.5, 0.0, 1.0);
+	vertexs[index * 4 + 3].position = datas[index].Position + vec4(-0.5,  0.5, 0.0, 1.0);
 
 
+	vertexs[index * 4 + 0].texcoord = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	vertexs[index * 4 + 1].texcoord = vec4(1.0f, 0.0f, 0.0f, 0.0f);
+	vertexs[index * 4 + 2].texcoord = vec4(1.0f, 1.0f, 0.0f, 0.0f);
+	vertexs[index * 4 + 3].texcoord = vec4(0.0f, 1.0f, 0.0f, 0.0f);
 
 }

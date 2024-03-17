@@ -23,7 +23,7 @@ class MyImGuiLayer : public ImGuiLayer
 {
 public:
 	MyImGuiLayer()
-		: m_Camera(45.0f, 0.1f, 100.0f), m_ParticleSystem(std::make_unique<BatchRender>()), m_ParticleType(SingleDrawMode)
+		: m_Camera(45.0f, 0.1f, 100.0f), m_ParticleSystem(std::make_unique<ComputeShader>()), m_ParticleType(ComputeShaderMode)
 	{
 		glEnable(GL_DEPTH);
 		// Init here

@@ -39,7 +39,6 @@ BatchRender::BatchRender()
 		indices[i * 6 + 3] = 2 + 4 * i;
 		indices[i * 6 + 4] = 3 + 4 * i;
 		indices[i * 6 + 5] = 0 + 4 * i;
-
 	}
 
 	glGenBuffers(1, &quadIB);
@@ -100,13 +99,13 @@ void BatchRender::OnRender(Camera& camera)
 
 		glm::vec3 right = camera.GetRightDirection();
 		glm::vec3 up = glm::normalize(glm::cross(right, camera.GetDirection()));
-		glm::mat3 rotateMatrix = glm::rotate(glm::mat4(1.0f), particle.Rotation, camera.GetPosition() - particle.Position);
+		glm::mat3 rotateMatrix = glm::rotate(glm::mat4(1.0f), particle.Rotation, camera.GetPosition() - glm::vec3(particle.Position));
 
 		Vertex vert[4];
-		vert[0].position = particle.Position + (rotateMatrix * (-right * size * 0.5f - up * size * 0.5f));
-		vert[1].position = particle.Position + (rotateMatrix * (+right * size * 0.5f - up * size * 0.5f));
-		vert[2].position = particle.Position + (rotateMatrix * (+right * size * 0.5f + up * size * 0.5f));
-		vert[3].position = particle.Position + (rotateMatrix * (-right * size * 0.5f + up * size * 0.5f));
+		vert[0].position = glm::vec3(particle.Position) + (rotateMatrix * (-right * size * 0.5f - up * size * 0.5f));
+		vert[1].position = glm::vec3(particle.Position) + (rotateMatrix * (+right * size * 0.5f - up * size * 0.5f));
+		vert[2].position = glm::vec3(particle.Position) + (rotateMatrix * (+right * size * 0.5f + up * size * 0.5f));
+		vert[3].position = glm::vec3(particle.Position) + (rotateMatrix * (-right * size * 0.5f + up * size * 0.5f));
 
 		vert[0].texcoord = glm::vec2(0.0f, 0.0f);
 		vert[1].texcoord = glm::vec2(1.0f, 0.0f);
@@ -134,11 +133,11 @@ void BatchRender::Emit(const ParticleProps& particleProps)
 	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
 
 	particle.Active = true;
-	particle.Position = particleProps.Position;
+	particle.Position = glm::vec4(particleProps.Position, 1.0f);
 	particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
 
 	// Velocity
-	particle.Velocity = particleProps.Velocity;
+	particle.Velocity = glm::vec4(particleProps.Velocity, 0.0f);
 	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float());
 	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float());
 	particle.Velocity.z += particleProps.VelocityVariation.z * (Random::Float());
