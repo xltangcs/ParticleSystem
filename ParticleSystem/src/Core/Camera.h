@@ -9,7 +9,7 @@ class Camera
 public:
 	bool isCameraMoved = false;
 public:
-	Camera(float verticalFOV = 45.0f, float nearClip = 0.1f, float farClip = 100.0f, bool isrotation = false);
+	Camera(float verticalFOV = 45.0f, float nearClip = 0.1f, float farClip = 100.0f, bool isrotation = true);
 
 	void OnUpdate(float ts);
 	void OnResize(int width, int height);
@@ -21,11 +21,15 @@ public:
 	const glm::mat4& GetInverseView() const { return m_InverseView; }
 
 	glm::vec3& GetPosition() { return m_Position; }
-	glm::vec3& GetDirection() { return m_ForwardDirection; }
+	glm::vec3& GetDirection() { return glm::normalize(m_ForwardDirection); }
+	glm::vec3& GetRightDirection() { return glm::normalize(glm::cross(m_ForwardDirection, glm::vec3(0.0f, 1.0f, 0.0f))); }
+
 	bool& GetIsRotation() { return isRotation; }
 	const float& GetFov() const { return m_VerticalFOV; }
+
 	int& GetWidth() { return m_ViewportWidth; }
 	int& GetHeight() { return m_ViewportHeight; }
+
 
 	float GetRotationSpeed();
 

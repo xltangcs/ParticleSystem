@@ -11,29 +11,28 @@
 #include "Core/Camera.h"
 #include "Core/Application.h"
 #include "Core/Time.h"
+#include "Core/Random.h"
 
-#include "App/Framebuffer.h"
 #include "App/ParticleSystem.h"
+#include "App/CPUParticleSystem.h"
+#include "App/GPUParticleSystem.h"
+#include "App/singleDraw.h"
 
-Timer m_Time;
-Timer m_Time1;
-float t1, t2;
+
 
 class MyImGuiLayer : public ImGuiLayer
 {
 public:
 	MyImGuiLayer()
-		: m_Framebuffer(100, 80), m_Camera(45.0f, 0.1f, 100.0f)
+		: m_Camera(45.0f, 0.1f, 100.0f), m_ParticleSystem(std::make_unique<CPUParticleSystem>()), m_ParticleType(SingleDraw)
 	{
-
+		glEnable(GL_DEPTH);
 		// Init here
-		m_Particle.ColorBegin = { 254 / 255.0f, 212 / 255.0f, 123 / 255.0f, 1.0f };
-		m_Particle.ColorEnd = { 254 / 255.0f, 109 / 255.0f, 41 / 255.0f, 1.0f };
 		m_Particle.SizeBegin = 0.5f, m_Particle.SizeVariation = 0.3f, m_Particle.SizeEnd = 0.0f;
-		m_Particle.LifeTime = 1.0f;
-		m_Particle.Velocity = { 0.0f, 0.0f };
-		m_Particle.VelocityVariation = { 3.01f, 2.01f };
-		m_Particle.Position = { 0.0f, 0.0f };
+		m_Particle.LifeTime = 10.0f;
+		m_Particle.Velocity = { 0.0f, 0.0f, 0.0f };
+		m_Particle.VelocityVariation = { 0.00f, -3.00f, 0.00f};
+		m_Particle.Position = { 0.0f, 0.0f, 0.0f};
 	}
 
 	virtual void OnUpdate(float ts) override
@@ -54,15 +53,25 @@ public:
 		ImGui::Text("Total Time : %.3f", 1000.0f / ImGui::GetIO().Framerate);
 		ImGui::Text("Update Time : %.3f", t1);
 		ImGui::Text("Render Time : %.3f", t2);
-		ImGui::Text("Number of particles : %d", m_ParticleSystem.ParticleQuantity());
+		ImGui::Text("Number of particles : %d", m_ParticleSystem->lifeParticle);
+		ImGui::Separator();
+
+		ImGui::DragFloat3("Camera Position", glm::value_ptr(m_Camera.GetPosition()), 0.01f, -100.00f, 100.00f);
+		ImGui::DragFloat3("Camera Direction", glm::value_ptr(m_Camera.GetRightDirection()), 0.01f, -100.00f, 100.00f);
 
 
 		ImGui::Separator();
 
+		ImGui::Text("Particle Type");
+		ImGui::RadioButton("SingleDraw", &m_ParticleType, SingleDraw); ImGui::SameLine();
+		ImGui::RadioButton("Draw Instance", &m_ParticleType, DrawInstance); ImGui::SameLine();
+		ImGui::RadioButton("GPU", &m_ParticleType, GPU);
+
+		ImGui::Checkbox("Snow", &isRun);
 		ImGui::DragFloat("Birth Size", &m_Particle.SizeBegin, 0.01f, 0.00f, 1000.00f);
-		ImGui::DragFloat("Death Size", &m_Particle.SizeEnd, 0.01f, 0.00f, 1000.00f);
-		ImGui::DragFloat("Life Time", &m_Particle.LifeTime, 0.01f, 0.00f, 1000.00f);
-		ImGui::DragInt("Emit Quantity", &particleQuantity);
+		ImGui::DragFloat("Life Time", &m_Particle.LifeTime, 0.01f, 0.01f, 1000.00f);
+		ImGui::DragFloat3("Particle Velocity", glm::value_ptr(m_Particle.VelocityVariation), 0.01f, -10.00f, 100.00f);
+		ImGui::DragInt("Emit Quantity", &singleParticleQuantity, 1, 1, 1000);
 
 		ImGui::End();
 
@@ -73,47 +82,55 @@ public:
 
 		m_Camera.OnResize(m_Width, m_Height);
 
-		GLFWwindow* window = Application::Get().GetGLFWwindow();
-
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		if (m_ParticleType != m_ParticleSystem->m_ParticleType)
 		{
-			
-			if (xpos >= 0 && ypos >= 0 && xpos < m_Width && ypos < m_Height)
+			switch (m_ParticleType)
 			{
-				float ndcX = (2.0f * xpos) / m_Width - 1.0f;
-				float ndcY = 1.0f - (2.0f * ypos) / m_Height;
-				glm::vec4 mouseNdc = glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
-				glm::vec3 mouseWorld = m_Camera.GetProjection() * m_Camera.GetInverseView() * mouseNdc;
-
-				m_Particle.Position = { mouseWorld.x, mouseWorld.y };
-
-				for (int i = 0; i < particleQuantity; i++)
-					m_ParticleSystem.Emit(m_Particle);
+			case SingleDraw:m_ParticleSystem = std::make_unique<singleDraw>();
+				break;
+			case DrawInstance: m_ParticleSystem = std::make_unique<CPUParticleSystem>();
+				break;
+			case GPU: m_ParticleSystem = std::make_unique<GPUParticleSystem>();
+				break;
+			default:
+				break;
 			}
 		}
 
+		if (isRun)
+		{
+			for (int i = 0; i < singleParticleQuantity; i++)
+			{
+				m_Particle.Position.x = Random::Float(m_ParticleSystem->xBounds.x, m_ParticleSystem->xBounds.y);
+				m_Particle.Position.y = Random::Float(m_ParticleSystem->yBounds.x, m_ParticleSystem->yBounds.y);
+				m_Particle.Position.z = Random::Float(m_ParticleSystem->zBounds.x, m_ParticleSystem->zBounds.y);
+				m_ParticleSystem->Emit(m_Particle);
+			}
+		}
 
 		m_Time.Reset();
-		m_ParticleSystem.OnUpdate(ts);
+		m_ParticleSystem->OnUpdate(ts);
 		t1 = m_Time.ElapsedMillis();
 		m_Time.Reset();
-		m_ParticleSystem.OnRender(m_Camera);
+		m_ParticleSystem->OnRender(m_Camera);
 		t2 = m_Time.ElapsedMillis();
 	}
 
 private:
-	int particleQuantity = 10000;
+	int singleParticleQuantity = 10;
 	int m_Width = 10, m_Height = 10;
 
 	Camera m_Camera;
 
-	Framebuffer m_Framebuffer;
-
 	ParticleProps m_Particle;
-	ParticleSystem m_ParticleSystem;
+	std::unique_ptr<ParticleSystem> m_ParticleSystem;
+	int m_ParticleType;
+
+	bool isRun = true;
+
+	Timer m_Time;
+	Timer m_Time1;
+	float t1, t2;
 };
 
 

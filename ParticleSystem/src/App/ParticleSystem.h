@@ -15,49 +15,52 @@
 
 struct ParticleProps
 {
-	glm::vec2 Position;
-	glm::vec2 Velocity, VelocityVariation;
-	glm::vec4 ColorBegin, ColorEnd;
+	glm::vec3 Position;
+	glm::vec3 Velocity, VelocityVariation;
 	float SizeBegin, SizeEnd, SizeVariation;
 	float LifeTime = 1.0f;
+};
+
+struct Particle
+{
+	glm::vec3 Position;
+	glm::vec3 Velocity;
+	float Rotation = 0.0f;
+	float SizeBegin, SizeEnd;
+
+	float LifeTime = 1.0f;
+	float LifeRemaining = 0.0f;
+
+	bool Active = false;
+};
+
+enum ParticleType
+{
+	SingleDraw = 0,
+	DrawInstance = 1,
+	GPU = 3
+};
+
+struct Vertex {
+	glm::vec3 position;
+	glm::vec2 texcoord;
 };
 
 class ParticleSystem
 {
 public:
-	ParticleSystem();
-
-	void OnUpdate(float ts);
-	void OnRender(Camera& camera);
-
-	void Emit(const ParticleProps& particleProps);
-
-	int ParticleQuantity() { return lifeParticle; }
-
-private:
-	struct Particle
-	{
-		glm::vec2 Position;
-		glm::vec2 Velocity;
-		glm::vec4 ColorBegin, ColorEnd;
-		float Rotation = 0.0f;
-		float SizeBegin, SizeEnd;
-
-		float LifeTime = 1.0f;
-		float LifeRemaining = 0.0f;
-
-		bool Active = false;
-	};
-	const int maxQuantity = 10000;
-
 	int lifeParticle = 0;
-	int m_PoolIndex = 0;
+	ParticleType m_ParticleType;
 
-	std::vector<Particle> m_ParticlePool;
+	glm::vec2 xBounds = glm::vec2(-10.0f, 10.0f);
+	glm::vec2 yBounds = glm::vec2(3.0f, 4.0f);
+	glm::vec2 zBounds = glm::vec2(-21.0f, -1.0f);
 
-	GLuint m_QuadVA = 0;
-	unsigned int buffer;
-	std::unique_ptr<Shader> m_ParticleShader = nullptr;
+public:
+	ParticleSystem(ParticleType type) : m_ParticleType(type) {};
+	virtual ~ParticleSystem() = default;
 
-	std::unique_ptr<Image> snowImage = nullptr;
+	virtual void Emit(const ParticleProps& particleProps) { };
+	virtual void OnUpdate(float ts) { };
+	virtual void OnRender(Camera& camera) {};
 };

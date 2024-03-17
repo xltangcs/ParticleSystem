@@ -1,4 +1,4 @@
-#include "ParticleSystem.h"
+#include "CPUParticleSystem.h"
 
 #include <glm/gtc/constants.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -8,7 +8,10 @@
 #include "Core/Random.h"
 
 
-ParticleSystem::ParticleSystem()
+CPUParticleSystem::CPUParticleSystem()
+	: ParticleSystem(DrawInstance),
+	m_ParticleShader(std::make_unique<Shader>("assets/shaders/CPU_particle.vert", "assets/shaders/2DQuad.frag")),
+	snowImage(std::make_unique<Image>("assets/textures/snow.png"))
 {
 	float vertices[] = {
 	 -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
@@ -66,16 +69,13 @@ ParticleSystem::ParticleSystem()
 	glVertexAttribDivisor(5, 1);
 
 
-	m_ParticleShader = std::make_unique<Shader>("assets/shaders/2DQuad.vert", "assets/shaders/2DQuad.frag");
-	snowImage = std::make_unique<Image>("assets/textures/snow.png");
-
 	m_ParticleShader->use();
-	m_ParticleShader->setInt("texture1", 0);
+	m_ParticleShader->setInt("snowTexture", 0);
 
 	m_ParticlePool.resize(maxQuantity);
 }
 
-void ParticleSystem::OnUpdate(float ts)
+void CPUParticleSystem::OnUpdate(float ts)
 {
 	std::vector<glm::mat4> modelMatrices;
 
@@ -99,7 +99,7 @@ void ParticleSystem::OnUpdate(float ts)
 		float life = particle.LifeRemaining / particle.LifeTime;
 		float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
 
-		glm::mat4 transform = glm::translate(glm::mat4(1.0f), { particle.Position.x, particle.Position.y, 0.0f })
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), { particle.Position.x, particle.Position.y, particle.Position.z })
 			* glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f })
 			* glm::scale(glm::mat4(1.0f), { size, size, 1.0f });
 
@@ -115,10 +115,10 @@ void ParticleSystem::OnUpdate(float ts)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ParticleSystem::OnRender(Camera& camera)
+void CPUParticleSystem::OnRender(Camera& camera)
 {
 	glClearColor(0, 0, 0, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// activate shader
 	m_ParticleShader->use();
@@ -138,7 +138,7 @@ void ParticleSystem::OnRender(Camera& camera)
 
 }
 
-void ParticleSystem::Emit(const ParticleProps& particleProps)
+void CPUParticleSystem::Emit(const ParticleProps& particleProps)
 {
 	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
 
@@ -148,12 +148,12 @@ void ParticleSystem::Emit(const ParticleProps& particleProps)
 
 	// Velocity
 	particle.Velocity = particleProps.Velocity;
-	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float() - 0.5f);
-	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float() - 0.5f);
+	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float());
+	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float());
+	particle.Velocity.z += particleProps.VelocityVariation.z * (Random::Float());
 
 	particle.LifeTime = particleProps.LifeTime;
 	particle.LifeRemaining = particleProps.LifeTime;
 	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
 	particle.SizeEnd = particleProps.SizeEnd;
-
 }

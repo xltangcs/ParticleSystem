@@ -19,7 +19,7 @@ Camera::Camera(float verticalFOV, float nearClip, float farClip, bool isrotation
 	: m_VerticalFOV(verticalFOV), m_NearClip(nearClip), m_FarClip(farClip), isRotation(isrotation)
 {
 	m_ForwardDirection = glm::vec3(0, 0, -1);
-	m_Position = glm::vec3(0, 0, 3);
+	m_Position = glm::vec3(0, 0, 10);
 
 	auto window = Application::Get().GetGLFWwindow();
 	glfwSetScrollCallback(window, scroll_callback);
@@ -29,10 +29,7 @@ Camera::Camera(float verticalFOV, float nearClip, float farClip, bool isrotation
 
 void Camera::OnUpdate(float ts)
 {
-	int width, height;
 	auto window = Application::Get().GetGLFWwindow();
-	glfwGetFramebufferSize(window, &width, &height);
-	OnResize(width, height);
 
 	this->isCameraMoved = false;
 
@@ -55,7 +52,7 @@ void Camera::OnUpdate(float ts)
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		return;
 	}
-	isFirst = false;
+	
 
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_CAPTURED);
 
@@ -97,7 +94,7 @@ void Camera::OnUpdate(float ts)
 		isCameraMoved = true;
 	}
 
-	if (isRotation)
+	if (!isFirst && isRotation)
 	{
 		// Rotation
 		if (delta.x != 0.0f || delta.y != 0.0f)
@@ -123,6 +120,8 @@ void Camera::OnUpdate(float ts)
 	{
 		RecalculateView();
 	}
+
+	isFirst = false;
 }
 
 void Camera::OnResize(int width, int height)
