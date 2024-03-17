@@ -14,17 +14,16 @@
 #include "Core/Random.h"
 
 #include "App/ParticleSystem.h"
-#include "App/CPUParticleSystem.h"
-#include "App/GPUParticleSystem.h"
-#include "App/singleDraw.h"
-
-
+#include "App/SingleDraw.h"
+#include "App/BatchRender.h"
+#include "App/DrawInstance.h"
+#include "App/ComputeShader.h"
 
 class MyImGuiLayer : public ImGuiLayer
 {
 public:
 	MyImGuiLayer()
-		: m_Camera(45.0f, 0.1f, 100.0f), m_ParticleSystem(std::make_unique<CPUParticleSystem>()), m_ParticleType(SingleDraw)
+		: m_Camera(45.0f, 0.1f, 100.0f), m_ParticleSystem(std::make_unique<BatchRender>()), m_ParticleType(SingleDrawMode)
 	{
 		glEnable(GL_DEPTH);
 		// Init here
@@ -57,15 +56,19 @@ public:
 		ImGui::Separator();
 
 		ImGui::DragFloat3("Camera Position", glm::value_ptr(m_Camera.GetPosition()), 0.01f, -100.00f, 100.00f);
-		ImGui::DragFloat3("Camera Direction", glm::value_ptr(m_Camera.GetRightDirection()), 0.01f, -100.00f, 100.00f);
+		ImGui::DragFloat3("Camera Direction", glm::value_ptr(m_Camera.GetDirection()), 0.01f, -100.00f, 100.00f);
 
 
 		ImGui::Separator();
 
-		ImGui::Text("Particle Type");
-		ImGui::RadioButton("SingleDraw", &m_ParticleType, SingleDraw); ImGui::SameLine();
-		ImGui::RadioButton("Draw Instance", &m_ParticleType, DrawInstance); ImGui::SameLine();
-		ImGui::RadioButton("GPU", &m_ParticleType, GPU);
+		//ImGui::Text("Particle Type");
+		//ImGui::RadioButton("Single Draw", &m_ParticleType, SingleDrawMode); ImGui::SameLine();
+		//ImGui::RadioButton("Batch Render", &m_ParticleType, BatchRenderMode); ImGui::SameLine();
+		//ImGui::RadioButton("Draw Instance", &m_ParticleType, DrawInstanceMode); ImGui::SameLine();
+		//ImGui::RadioButton("Compute Shader", &m_ParticleType, ComputeShaderMode);
+
+		char* particleTypeName[] = {"Single Draw" , "Batch Render" , "Draw Instance" , "Compute Shader"};
+		ImGui::Combo("Particle Type", &m_ParticleType, particleTypeName, 4 );
 
 		ImGui::Checkbox("Snow", &isRun);
 		ImGui::DragFloat("Birth Size", &m_Particle.SizeBegin, 0.01f, 0.00f, 1000.00f);
@@ -86,11 +89,13 @@ public:
 		{
 			switch (m_ParticleType)
 			{
-			case SingleDraw:m_ParticleSystem = std::make_unique<singleDraw>();
+			case SingleDrawMode:m_ParticleSystem = std::make_unique<SingleDraw>();
 				break;
-			case DrawInstance: m_ParticleSystem = std::make_unique<CPUParticleSystem>();
+			case BatchRenderMode: m_ParticleSystem = std::make_unique<BatchRender>();
 				break;
-			case GPU: m_ParticleSystem = std::make_unique<GPUParticleSystem>();
+			case DrawInstanceMode: m_ParticleSystem = std::make_unique<DrawInstance>();
+				break;
+			case ComputeShaderMode: m_ParticleSystem = std::make_unique<ComputeShader>();
 				break;
 			default:
 				break;

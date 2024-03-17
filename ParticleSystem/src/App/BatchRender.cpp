@@ -1,4 +1,4 @@
-#include "SingleDraw.h"
+#include "BatchRender.h"
 
 #include <glm/gtc/constants.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -8,8 +8,8 @@
 #include "Core/Random.h"
 
 
-SingleDraw::SingleDraw()
-	: ParticleSystem(SingleDrawMode),
+BatchRender::BatchRender()
+	: ParticleSystem(BatchRenderMode),
 	m_ParticleShader(std::make_unique<Shader>("assets/shaders/SingleDraw.vert", "assets/shaders/2DQuad.frag")),
 	snowImage(std::make_unique<Image>("assets/textures/snow.png"))
 {
@@ -22,28 +22,35 @@ SingleDraw::SingleDraw()
 
 	glGenBuffers(1, &quadVB);
 	glBindBuffer(GL_ARRAY_BUFFER, quadVB);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 4, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 4 * maxQuantity, nullptr, GL_DYNAMIC_DRAW);
 	//glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 4, &vert[0], GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, position));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texcoord));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texcoord));
 
+	std::vector<uint32_t> indices(maxQuantity * 6);
+	for (size_t i = 0; i < maxQuantity; i++)
+	{
+		indices[i * 6 + 0] = 0 + 4 * i;
+		indices[i * 6 + 1] = 1 + 4 * i;
+		indices[i * 6 + 2] = 2 + 4 * i;
+		indices[i * 6 + 3] = 2 + 4 * i;
+		indices[i * 6 + 4] = 3 + 4 * i;
+		indices[i * 6 + 5] = 0 + 4 * i;
 
-	uint32_t indices[] = {
-	0, 1, 2, 2, 3, 0
-	};
+	}
 
 	glGenBuffers(1, &quadIB);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIB);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * maxQuantity * 6, &indices[0], GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
 
 }
 
-void SingleDraw::OnUpdate(float ts)
+void BatchRender::OnUpdate(float ts)
 {
 	this->lifeParticle = 0;
 	for (auto& particle : m_ParticlePool)
@@ -66,7 +73,7 @@ void SingleDraw::OnUpdate(float ts)
 	}
 }
 
-void SingleDraw::OnRender(Camera& camera)
+void BatchRender::OnRender(Camera& camera)
 {
 	glClearColor(0, 0, 0, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -77,11 +84,13 @@ void SingleDraw::OnRender(Camera& camera)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, snowImage->GetTextureID());
 
-	
+
 	m_ParticleShader->setMat4("u_Projection", camera.GetProjection());
 	m_ParticleShader->setMat4("u_View", camera.GetView());
 
-
+	std::vector<Vertex> vertexs;
+	//Vertex* vertexs = new Vertex[lifeParticle * 4];
+	
 	for (auto& particle : m_ParticlePool)
 	{
 		if (!particle.Active) continue;
@@ -93,35 +102,37 @@ void SingleDraw::OnRender(Camera& camera)
 		glm::vec3 up = glm::normalize(glm::cross(right, camera.GetDirection()));
 		glm::mat3 rotateMatrix = glm::rotate(glm::mat4(1.0f), particle.Rotation, camera.GetPosition() - particle.Position);
 
-		//Vertex vert[4];
-		std::vector<Vertex> vert(4);
+		Vertex vert[4];
+		vert[0].position = particle.Position + (rotateMatrix * (-right * size * 0.5f - up * size * 0.5f));
+		vert[1].position = particle.Position + (rotateMatrix * (+right * size * 0.5f - up * size * 0.5f));
+		vert[2].position = particle.Position + (rotateMatrix * (+right * size * 0.5f + up * size * 0.5f));
+		vert[3].position = particle.Position + (rotateMatrix * (-right * size * 0.5f + up * size * 0.5f));
 
-		vert[0].position = particle.Position + (rotateMatrix * ( - right * size * 0.5f - up * size * 0.5f));
-		vert[1].position = particle.Position + (rotateMatrix * ( + right * size * 0.5f - up * size * 0.5f));
-		vert[2].position = particle.Position + (rotateMatrix * ( + right * size * 0.5f + up * size * 0.5f));
-		vert[3].position = particle.Position + (rotateMatrix * ( - right * size * 0.5f + up * size * 0.5f));
-		
 		vert[0].texcoord = glm::vec2(0.0f, 0.0f);
 		vert[1].texcoord = glm::vec2(1.0f, 0.0f);
 		vert[2].texcoord = glm::vec2(1.0f, 1.0f);
 		vert[3].texcoord = glm::vec2(0.0f, 1.0f);
-		
-		glBindBuffer(GL_ARRAY_BUFFER, quadVB);
-		//glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vert), &vert[0].position.x);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * 4, &vert[0]);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		glBindVertexArray(m_VAO);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-		glBindVertexArray(0);
+		vertexs.push_back(vert[0]);
+		vertexs.push_back(vert[1]);
+		vertexs.push_back(vert[2]);
+		vertexs.push_back(vert[3]);
 
 	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, quadVB);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * vertexs.size(), &vertexs[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(m_VAO);
+	glDrawElements(GL_TRIANGLES, 6 * lifeParticle, GL_UNSIGNED_INT, nullptr);
+	glBindVertexArray(0);
+
 }
 
-void SingleDraw::Emit(const ParticleProps& particleProps)
+void BatchRender::Emit(const ParticleProps& particleProps)
 {
 	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
-	
+
 	particle.Active = true;
 	particle.Position = particleProps.Position;
 	particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();

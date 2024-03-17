@@ -22,7 +22,7 @@ public:
 
 	glm::vec3& GetPosition() { return m_Position; }
 	glm::vec3& GetDirection() { return glm::normalize(m_ForwardDirection); }
-	glm::vec3& GetRightDirection() { return glm::normalize(glm::cross(m_ForwardDirection, glm::vec3(0.0f, 1.0f, 0.0f))); }
+	glm::vec3 GetRightDirection() { return glm::normalize(glm::cross(m_ForwardDirection, glm::vec3(0.0f, 1.0f, 0.0f))); }
 
 	bool& GetIsRotation() { return isRotation; }
 	const float& GetFov() const { return m_VerticalFOV; }

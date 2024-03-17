@@ -1,4 +1,4 @@
-#include "GPUParticleSystem.h"
+#include "ComputeShader.h"
 
 #include "Core/Random.h"
 
@@ -7,8 +7,8 @@
 #include <glm/gtx/compatibility.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-GPUParticleSystem::GPUParticleSystem()
-	:ParticleSystem(GPU),
+ComputeShader::ComputeShader()
+	:ParticleSystem(ComputeShaderMode),
 	m_ParticleShader(std::make_unique<Shader>("assets/shaders/GPU_particle.vert", "assets/shaders/2DQuad.frag")),
 	m_ComputeShader(std::make_unique<Shader>("assets/shaders/compute.comp")),
 	snowImage(std::make_unique<Image>("assets/textures/snow.png"))
@@ -67,7 +67,7 @@ GPUParticleSystem::GPUParticleSystem()
 
 }
 
-void GPUParticleSystem::Emit(const ParticleProps& particleProps)
+void ComputeShader::Emit(const ParticleProps& particleProps)
 {
 	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
 
@@ -88,7 +88,7 @@ void GPUParticleSystem::Emit(const ParticleProps& particleProps)
 
 
 }
-void GPUParticleSystem::OnUpdate(float ts)
+void ComputeShader::OnUpdate(float ts)
 {
 	m_ComputeShader->use();
 	m_ComputeShader->setFloat("ts", ts);
@@ -117,7 +117,7 @@ void GPUParticleSystem::OnUpdate(float ts)
 	//}
 }
 
-void GPUParticleSystem::OnRender(Camera& camera)
+void ComputeShader::OnRender(Camera& camera)
 {
 	glClearColor(0, 0, 0, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

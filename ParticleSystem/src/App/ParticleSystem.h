@@ -36,9 +36,10 @@ struct Particle
 
 enum ParticleType
 {
-	SingleDraw = 0,
-	DrawInstance = 1,
-	GPU = 3
+	SingleDrawMode = 0,
+	BatchRenderMode = 1,
+	DrawInstanceMode = 2,
+	ComputeShaderMode = 3
 };
 
 struct Vertex {
@@ -51,10 +52,12 @@ class ParticleSystem
 public:
 	int lifeParticle = 0;
 	ParticleType m_ParticleType;
+	const int maxQuantity = 100000;
 
 	glm::vec2 xBounds = glm::vec2(-10.0f, 10.0f);
 	glm::vec2 yBounds = glm::vec2(3.0f, 4.0f);
 	glm::vec2 zBounds = glm::vec2(-21.0f, -1.0f);
+
 
 public:
 	ParticleSystem(ParticleType type) : m_ParticleType(type) {};

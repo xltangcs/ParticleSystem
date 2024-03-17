@@ -1,4 +1,4 @@
-#include "CPUParticleSystem.h"
+#include "DrawInstance.h"
 
 #include <glm/gtc/constants.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -8,9 +8,9 @@
 #include "Core/Random.h"
 
 
-CPUParticleSystem::CPUParticleSystem()
-	: ParticleSystem(DrawInstance),
-	m_ParticleShader(std::make_unique<Shader>("assets/shaders/CPU_particle.vert", "assets/shaders/2DQuad.frag")),
+DrawInstance::DrawInstance()
+	: ParticleSystem(DrawInstanceMode),
+	m_ParticleShader(std::make_unique<Shader>("assets/shaders/DrawInstance.vert", "assets/shaders/2DQuad.frag")),
 	snowImage(std::make_unique<Image>("assets/textures/snow.png"))
 {
 	float vertices[] = {
@@ -49,7 +49,6 @@ CPUParticleSystem::CPUParticleSystem()
 	glGenBuffers(1, &buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
 	glBufferData(GL_ARRAY_BUFFER, maxQuantity * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
-
 	//glBufferData(GL_ARRAY_BUFFER, lifeParticle * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
 
 
@@ -75,10 +74,8 @@ CPUParticleSystem::CPUParticleSystem()
 	m_ParticlePool.resize(maxQuantity);
 }
 
-void CPUParticleSystem::OnUpdate(float ts)
+void DrawInstance::OnUpdate(float ts)
 {
-	std::vector<glm::mat4> modelMatrices;
-
 	for (auto& particle : m_ParticlePool)
 	{
 		if (!particle.Active)
@@ -96,33 +93,45 @@ void CPUParticleSystem::OnUpdate(float ts)
 		particle.Position += particle.Velocity * (float)ts;
 		particle.Rotation += 0.01f * ts;
 
+	}
+}
+
+void DrawInstance::OnRender(Camera& camera)
+{
+
+	std::vector<glm::mat4> modelMatrices;
+
+	for (auto& particle : m_ParticlePool)
+	{
+		if (!particle.Active) continue;
 		float life = particle.LifeRemaining / particle.LifeTime;
 		float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
 
+		//float thea = glm::acos(camera.GetPosition().z / glm::length(camera.GetPosition()));
+		//glm::vec3 right = camera.GetRightDirection();
+		//glm::vec3 up = glm::normalize(glm::cross(right, camera.GetDirection()));
+
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), { particle.Position.x, particle.Position.y, particle.Position.z })
+			//* glm::rotate(glm::mat4(1.0f), thea, up)
 			* glm::rotate(glm::mat4(1.0f), particle.Rotation, { 0.0f, 0.0f, 1.0f })
 			* glm::scale(glm::mat4(1.0f), { size, size, 1.0f });
 
 		modelMatrices.push_back(transform);
 
 	}
-
 	lifeParticle = modelMatrices.size();
 
 	glBindVertexArray(m_QuadVA);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, lifeParticle * sizeof(glm::mat4), &modelMatrices[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
 
-void CPUParticleSystem::OnRender(Camera& camera)
-{
+
 	glClearColor(0, 0, 0, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// activate shader
 	m_ParticleShader->use();
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, snowImage->GetTextureID());
 
@@ -138,7 +147,7 @@ void CPUParticleSystem::OnRender(Camera& camera)
 
 }
 
-void CPUParticleSystem::Emit(const ParticleProps& particleProps)
+void DrawInstance::Emit(const ParticleProps& particleProps)
 {
 	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
 
