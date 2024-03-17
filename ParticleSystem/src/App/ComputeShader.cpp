@@ -9,11 +9,12 @@
 
 ComputeShader::ComputeShader()
 	:ParticleSystem(ComputeShaderMode),
-	m_ParticleShader(std::make_unique<Shader>("assets/shaders/computeShader.vert", "assets/shaders/2DQuad.frag")),
-	m_ComputeShader(std::make_unique<Shader>("assets/shaders/compute.comp")),
-	snowImage(std::make_unique<Image>("assets/textures/snow.png"))
+	m_ComputeShader(std::make_unique<Shader>("assets/shaders/compute.comp"))
 {
-	m_ParticlePool.resize(maxQuantity);
+	m_ParticleShader = std::make_unique<Shader>("assets/shaders/computeShader.vert", "assets/shaders/2DQuad.frag");
+	snowImage = std::make_unique<Image>("assets/textures/snow.png");
+
+	m_ParticleGPUPool.resize(maxQuantity);
 	m_ParticleShader->use();
 	m_ParticleShader->setInt("snowTexture", 0);
 
@@ -26,18 +27,6 @@ ComputeShader::ComputeShader()
 
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
-
-	//glGenBuffers(1, &vertexBuffer);
-	//glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	////glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(VertexGPU) * maxQuantity * 4 , nullptr, GL_STATIC_DRAW);
-	//
-	//glEnableVertexAttribArray(0);
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	//glEnableVertexAttribArray(1);
-	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	//
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	std::vector<uint32_t> indices(maxQuantity * 6);
 	for (size_t i = 0; i < maxQuantity; i++)
@@ -57,69 +46,77 @@ ComputeShader::ComputeShader()
 	glBindVertexArray(0);
 
 
-	ParticleGPU p[3];
-	p[0].Position = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-	p[0].Velocity = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+	//ParticleGPU p[3];
+	//p[0].Position = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+	//p[0].Velocity = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+	//
+	//p[1].Position = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
+	//p[1].Velocity = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+	//
+	//p[2].Position = glm::vec4(3.0f, 0.0f, 0.0f, 0.0f);
+	//p[2].Velocity = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	p[1].Position = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
-	p[1].Velocity = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
-
-	p[2].Position = glm::vec4(3.0f, 0.0f, 0.0f, 0.0f);
-	p[2].Velocity = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	glGenBuffers(1, &particleBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleGPU) * 3, p, GL_STATIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleGPU) * maxQuantity, nullptr, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
 
 	glGenBuffers(1, &vertexBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexBuffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(VertexGPU) * 12, nullptr, GL_STATIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(VertexGPU) * maxQuantity * 4, nullptr, GL_STATIC_DRAW);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 }
 
-void ComputeShader::Emit(const ParticleProps& particleProps)
+void ComputeShader::Emit(const ParticleProps& particleProps, int quantity)
 {
-	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
+	for (size_t i = 0; i < quantity; i++)
+	{
+		float x = Random::Float(this->xBounds.x, this->xBounds.y);
+		float y = Random::Float(this->yBounds.x, this->yBounds.y);
+		float z = Random::Float(this->zBounds.x, this->zBounds.y);
 
-	particle.Active = true;
-	particle.Position = glm::vec4(particleProps.Position, 1.0f);
-	particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
+		ParticleGPU& particle = m_ParticleGPUPool[(m_PoolIndex++) % maxQuantity];
 
-	// Velocity
-	particle.Velocity = glm::vec4(particleProps.Velocity, 0.0f);
-	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float());
-	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float());
-	particle.Velocity.z += particleProps.VelocityVariation.z * (Random::Float());
+		particle.Position = glm::vec4(x, y ,z, 1.0f);
 
-	particle.LifeTime = particleProps.LifeTime;
-	particle.LifeRemaining = particleProps.LifeTime;
-	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
-	particle.SizeBegin = particleProps.SizeBegin;
-	particle.SizeEnd = particleProps.SizeEnd;
+		particle.Velocity = glm::vec4(particleProps.Velocity, 0.0f);
+		particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float());
+		particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float());
+		particle.Velocity.z += particleProps.VelocityVariation.z * (Random::Float());
+
+		particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
+
+		particle.LifeRemaining = particleProps.LifeTime;
+
+		particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
+
+		particle.Active = true;
+
+		m_ComputeShader->use();
+		m_ComputeShader->setFloat("LifeTime", particleProps.LifeTime);
+
+	}
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffer);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ParticleGPU) * maxQuantity, &m_ParticleGPUPool[0]);
 
 }
-void ComputeShader::OnUpdate(float ts)
+void ComputeShader::OnUpdate(float ts, Camera& camera)
 {
 	m_ComputeShader->use();
 	m_ComputeShader->setFloat("ts", ts);
+	m_ComputeShader->setVec3("cameraDirection", camera.GetDirection());
+	m_ComputeShader->setVec3("cameraPosition", camera.GetPosition());
 
-	
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffer);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexBuffer);
 
-	glDispatchCompute(3, 1, 1);
+	glDispatchCompute(maxQuantity, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-	ParticleGPU p[3];
+	
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffer);
-	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ParticleGPU) * 3, p);
-
-	VertexGPU m[3 * 4];
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexBuffer);
-	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(VertexGPU) * 12, m);
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ParticleGPU) * maxQuantity, &m_ParticleGPUPool[0]);
 
 }
 
@@ -146,6 +143,6 @@ void ComputeShader::OnRender(Camera& camera)
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(VertexGPU), (void*)offsetof(VertexGPU, texcoord));
 
 	glBindVertexArray(m_VAO);
-	glDrawElements(GL_TRIANGLES, 6 * 3, GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, 6 * maxQuantity, GL_UNSIGNED_INT, nullptr);
 	glBindVertexArray(0);
 }

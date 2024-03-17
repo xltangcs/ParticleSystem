@@ -9,10 +9,11 @@
 
 
 SingleDraw::SingleDraw()
-	: ParticleSystem(SingleDrawMode),
-	m_ParticleShader(std::make_unique<Shader>("assets/shaders/SingleDraw.vert", "assets/shaders/2DQuad.frag")),
-	snowImage(std::make_unique<Image>("assets/textures/snow.png"))
+	: ParticleSystem(SingleDrawMode)
 {
+	m_ParticleShader = std::make_unique<Shader>("assets/shaders/SingleDraw.vert", "assets/shaders/2DQuad.frag");
+	snowImage = std::make_unique<Image>("assets/textures/snow.png");
+
 	m_ParticleShader->use();
 	m_ParticleShader->setInt("snowTexture", 0);
 	m_ParticlePool.resize(maxQuantity);
@@ -20,8 +21,8 @@ SingleDraw::SingleDraw()
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
 
-	glGenBuffers(1, &quadVB);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVB);
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 4, nullptr, GL_DYNAMIC_DRAW);
 	//glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 4, &vert[0], GL_STATIC_DRAW);
 
@@ -35,15 +36,15 @@ SingleDraw::SingleDraw()
 	0, 1, 2, 2, 3, 0
 	};
 
-	glGenBuffers(1, &quadIB);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadIB);
+	glGenBuffers(1, &IBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
 
 }
 
-void SingleDraw::OnUpdate(float ts)
+void SingleDraw::OnUpdate(float ts, Camera& camera)
 {
 	this->lifeParticle = 0;
 	for (auto& particle : m_ParticlePool)
@@ -105,8 +106,7 @@ void SingleDraw::OnRender(Camera& camera)
 		vert[2].texcoord = glm::vec2(1.0f, 1.0f);
 		vert[3].texcoord = glm::vec2(0.0f, 1.0f);
 		
-		glBindBuffer(GL_ARRAY_BUFFER, quadVB);
-		//glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vert), &vert[0].position.x);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * 4, &vert[0]);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -117,23 +117,3 @@ void SingleDraw::OnRender(Camera& camera)
 	}
 }
 
-void SingleDraw::Emit(const ParticleProps& particleProps)
-{
-	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
-
-	particle.Active = true;
-	particle.Position = glm::vec4(particleProps.Position, 1.0f);
-	particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
-
-	// Velocity
-	particle.Velocity = glm::vec4(particleProps.Velocity, 0.0f);
-	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float());
-	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float());
-	particle.Velocity.z += particleProps.VelocityVariation.z * (Random::Float());
-
-	particle.LifeTime = particleProps.LifeTime;
-	particle.LifeRemaining = particleProps.LifeTime;
-	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
-	particle.SizeBegin = particleProps.SizeBegin;
-	particle.SizeEnd = particleProps.SizeEnd;
-}

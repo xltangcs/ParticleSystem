@@ -10,7 +10,7 @@ struct ParticleGPU
 	float LifeRemaining = 1.0f;
 
 	float SizeBegin;
-	bool Active = true;
+	bool Active = false;
 };
 
 struct VertexGPU {
@@ -23,18 +23,14 @@ class ComputeShader : public ParticleSystem
 public:
 	ComputeShader();
 
-	virtual void Emit(const ParticleProps& particleProps) override;
-	virtual void OnUpdate(float ts) override;
+	virtual void Emit(const ParticleProps& particleProps, int quantity) override;
+	virtual void OnUpdate(float ts, Camera& camera) override;
 	virtual void OnRender(Camera& camera) override;
 
 private:
 	std::unique_ptr<Shader> m_ComputeShader = nullptr;
-	std::unique_ptr<Shader> m_ParticleShader = nullptr;
-	std::unique_ptr<Image> snowImage = nullptr;
-
-	std::vector<Particle> m_ParticlePool;
-	int m_PoolIndex = 0;
+	std::vector<ParticleGPU> m_ParticleGPUPool;
 
 	GLuint m_VAO = 0;
-	GLuint IBO, vertexBuffer, particleBuffer, modelBuffer;
+	GLuint IBO, vertexBuffer, particleBuffer;
 };

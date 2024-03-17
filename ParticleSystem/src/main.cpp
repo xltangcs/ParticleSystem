@@ -104,17 +104,11 @@ public:
 
 		if (isRun)
 		{
-			for (int i = 0; i < singleParticleQuantity; i++)
-			{
-				m_Particle.Position.x = Random::Float(m_ParticleSystem->xBounds.x, m_ParticleSystem->xBounds.y);
-				m_Particle.Position.y = Random::Float(m_ParticleSystem->yBounds.x, m_ParticleSystem->yBounds.y);
-				m_Particle.Position.z = Random::Float(m_ParticleSystem->zBounds.x, m_ParticleSystem->zBounds.y);
-				m_ParticleSystem->Emit(m_Particle);
-			}
+			m_ParticleSystem->Emit(m_Particle, singleParticleQuantity);
 		}
 
 		m_Time.Reset();
-		m_ParticleSystem->OnUpdate(ts);
+		m_ParticleSystem->OnUpdate(ts, m_Camera);
 		t1 = m_Time.ElapsedMillis();
 		m_Time.Reset();
 		m_ParticleSystem->OnRender(m_Camera);

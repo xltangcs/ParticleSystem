@@ -9,10 +9,11 @@
 
 
 DrawInstance::DrawInstance()
-	: ParticleSystem(DrawInstanceMode),
-	m_ParticleShader(std::make_unique<Shader>("assets/shaders/DrawInstance.vert", "assets/shaders/2DQuad.frag")),
-	snowImage(std::make_unique<Image>("assets/textures/snow.png"))
+	: ParticleSystem(DrawInstanceMode)
 {
+	m_ParticleShader = std::make_unique<Shader>("assets/shaders/DrawInstance.vert", "assets/shaders/2DQuad.frag");
+	snowImage = std::make_unique<Image>("assets/textures/snow.png");
+
 	m_ParticleShader->use();
 	m_ParticleShader->setInt("snowTexture", 0);
 	m_ParticlePool.resize(maxQuantity);
@@ -74,7 +75,7 @@ DrawInstance::DrawInstance()
 	glVertexAttribDivisor(5, 1);
 }
 
-void DrawInstance::OnUpdate(float ts)
+void DrawInstance::OnUpdate(float ts, Camera& camera)
 {
 	for (auto& particle : m_ParticlePool)
 	{
@@ -145,25 +146,4 @@ void DrawInstance::OnRender(Camera& camera)
 	glDrawElementsInstanced(GL_TRIANGLES, 6 * sizeof(uint32_t), GL_UNSIGNED_INT, 0, lifeParticle);
 	glBindVertexArray(0);
 
-}
-
-void DrawInstance::Emit(const ParticleProps& particleProps)
-{
-	Particle& particle = m_ParticlePool[(m_PoolIndex++) % maxQuantity];
-
-	particle.Active = true;
-	particle.Position = glm::vec4(particleProps.Position, 1.0f);
-	particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
-
-	// Velocity
-	particle.Velocity = glm::vec4(particleProps.Velocity, 0.0f);
-	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float());
-	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float());
-	particle.Velocity.z += particleProps.VelocityVariation.z * (Random::Float());
-
-	particle.LifeTime = particleProps.LifeTime;
-	particle.LifeRemaining = particleProps.LifeTime;
-	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
-	particle.SizeBegin = particleProps.SizeBegin;
-	particle.SizeEnd = particleProps.SizeEnd;
 }
